@@ -1,0 +1,15 @@
+# Dependencies
+node_modules/
+
+# Local environment and credentials
+.env
+.env.*
+!.env.example
+
+# Generated Prisma clients
+/generated/
+
+# Logs and local tooling
+*.log
+.DS_Store
+.vscode/

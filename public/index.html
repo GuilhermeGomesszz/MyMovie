@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#101014">
+    <meta name="description" content="Descubra, organize e converse sobre filmes com a comunidade Cinephile.">
+    <title>Cinephile — filmes para sentir</title>
+    <link rel="preconnect" href="https://image.tmdb.org">
+    <link rel="preconnect" href="https://api.themoviedb.org">
+    <link rel="stylesheet" href="/styles.css">
+    <script src="/app.js" defer></script>
+  </head>
+  <body>
+    <header class="topbar">
+      <a class="brand" href="#" aria-label="Cinephile, início">
+        <span class="brand-mark" aria-hidden="true">c</span>
+        <span>cinephile<span class="brand-period">.</span></span>
+      </a>
+      <nav class="desktop-nav" aria-label="Navegação principal">
+        <button class="nav-link is-active" data-view="home">Início</button>
+        <button class="nav-link" data-view="categories">Categorias</button>
+        <button class="nav-link" data-view="watchlist">Minha lista</button>
+        <button class="nav-link" data-view="recommendations">Para você</button>
+      </nav>
+      <div class="topbar-actions">
+        <label class="search-box">
+          <span class="search-icon" aria-hidden="true">⌕</span>
+          <input id="searchInput" type="search" placeholder="Buscar filmes..." autocomplete="off" aria-label="Buscar filmes">
+          <kbd>⌘ K</kbd>
+          <button id="clearSearch" class="clear-search" aria-label="Limpar busca" hidden>×</button>
+        </label>
+        <button id="accountButton" class="account-button" aria-label="Entrar ou criar conta">
+          <span class="account-avatar">↗</span><span id="accountLabel">Entrar</span>
+        </button>
+      </div>
+      <div id="searchResults" class="search-results" hidden></div>
+    </header>
+
+    <main>
+      <section id="homeView" class="view is-visible">
+        <section id="hero" class="hero">
+          <div class="hero-image"></div>
+          <div class="hero-shade"></div>
+          <div class="hero-content">
+            <p class="eyebrow"><span class="eyebrow-dot"></span> SUA PRÓXIMA HISTÓRIA COMEÇA AQUI</p>
+            <p id="heroKicker" class="hero-kicker">ESCOLHA DO DIA</p>
+            <h1 id="heroTitle">Filmes que<br>ficam com você.</h1>
+            <p id="heroOverview" class="hero-copy">Descubra histórias inesquecíveis, organize sua lista e encontre gente que ama cinema tanto quanto você.</p>
+            <div class="hero-actions">
+              <button id="heroExplore" class="button button-primary"><span aria-hidden="true">▶</span> Explorar filmes</button>
+              <button id="heroDetails" class="button button-ghost" hidden>Saiba mais <span aria-hidden="true">↗</span></button>
+            </div>
+            <div id="heroMeta" class="hero-meta"></div>
+          </div>
+          <div class="hero-count"><span id="heroIndex">01</span><span class="hero-count-line"></span><span>03</span></div>
+        </section>
+
+        <section class="content-section" id="trendingSection">
+          <div class="section-heading">
+            <div><p class="section-kicker">NO RADAR</p><h2>Em alta agora<span class="brand-period">.</span></h2></div>
+            <button class="text-link" data-view="categories">Ver categorias <span aria-hidden="true">→</span></button>
+          </div>
+          <div id="trendingGrid" class="movie-row"></div>
+        </section>
+
+        <section class="content-section">
+          <div class="section-heading">
+            <div><p class="section-kicker">FEITOS PARA FICAR</p><h2>Favoritos da crítica<span class="brand-period">.</span></h2></div>
+            <span class="section-note">As histórias mais bem avaliadas</span>
+          </div>
+          <div id="topRatedGrid" class="movie-row"></div>
+        </section>
+
+        <section id="recommendationsSection" class="content-section recommendations-section" hidden>
+          <div class="section-heading">
+            <div><p class="section-kicker">DO SEU JEITO</p><h2>Feito para você<span class="brand-period">.</span></h2></div>
+            <button class="text-link" data-view="recommendations">Ver tudo <span aria-hidden="true">→</span></button>
+          </div>
+          <p id="recommendationBasis" class="section-note"></p>
+          <div id="recommendationsGrid" class="movie-row"></div>
+        </section>
+
+        <section class="genre-banner">
+          <div class="genre-orbit orbit-one"></div><div class="genre-orbit orbit-two"></div>
+          <div class="genre-banner-copy">
+            <p class="section-kicker">SEU HUMOR, SEU FILME</p>
+            <h2>Que tipo de história<br>você quer hoje?</h2>
+          </div>
+          <div id="genreChips" class="genre-chips"></div>
+        </section>
+      </section>
+
+      <section id="categoriesView" class="view page-view">
+        <div class="page-heading"><p class="section-kicker">EXPLORE POR GÊNERO</p><h1>Um universo de histórias<span class="brand-period">.</span></h1><p>Encontre seu próximo favorito, do suspense que arrepia à comédia que melhora o dia.</p></div>
+        <div id="categoryFilters" class="category-filters"></div>
+        <div id="categoryGrid" class="movie-grid"></div>
+      </section>
+
+      <section id="watchlistView" class="view page-view">
+        <div class="page-heading"><p class="section-kicker">SUA COLEÇÃO PESSOAL</p><h1>Minha lista<span class="brand-period">.</span></h1><p>Todos os filmes que você quer ver — e os que já fizeram parte da sua história.</p></div>
+        <div id="watchlistFilters" class="status-filters"></div>
+        <div id="watchlistGrid" class="movie-grid"></div>
+      </section>
+
+      <section id="recommendationsView" class="view page-view">
+        <div class="page-heading"><p class="section-kicker">CURADORIA COM A SUA CARA</p><h1>Para você<span class="brand-period">.</span></h1><p id="recommendationsIntro">Sugestões que combinam com os filmes e gêneros da sua lista.</p></div>
+        <div id="recommendationsPageGrid" class="movie-grid"></div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <a class="brand" href="#"><span class="brand-mark">c</span><span>cinephile<span class="brand-period">.</span></span></a>
+      <p>Feito para quem sente o cinema.</p>
+      <span class="tmdb-credit">Dados de filmes fornecidos por TMDB</span>
+    </footer>
+
+    <nav class="mobile-nav" aria-label="Navegação mobile">
+      <button class="mobile-nav-item is-active" data-view="home"><span>⌂</span>Início</button>
+      <button class="mobile-nav-item" data-view="categories"><span>▦</span>Explorar</button>
+      <button class="mobile-nav-item" data-view="watchlist"><span>♡</span>Minha lista</button>
+      <button class="mobile-nav-item" data-view="recommendations"><span>✳</span>Para você</button>
+    </nav>
+
+    <dialog id="movieDialog" class="dialog movie-dialog">
+      <button class="dialog-close" data-close="movieDialog" aria-label="Fechar">×</button>
+      <div id="movieDialogContent"></div>
+    </dialog>
+    <dialog id="authDialog" class="dialog auth-dialog">
+      <button class="dialog-close" data-close="authDialog" aria-label="Fechar">×</button>
+      <div class="auth-brand"><span class="brand-mark">c</span><span>cinephile<span class="brand-period">.</span></span></div>
+      <p class="section-kicker">BOM TE VER POR AQUI</p>
+      <h2 id="authTitle">Entre para sua comunidade.</h2>
+      <p id="authDescription" class="auth-description">Salve filmes, receba recomendações e participe da conversa.</p>
+      <form id="authForm" class="auth-form">
+        <label id="nameField" hidden>Seu nome<input name="name" autocomplete="name" maxlength="80"></label>
+        <label>E-mail<input name="email" type="email" autocomplete="email" required></label>
+        <label>Senha<input name="password" type="password" autocomplete="current-password" minlength="8" required></label>
+        <p id="authError" class="form-error" role="alert"></p>
+        <button id="authSubmit" class="button button-primary" type="submit">Entrar</button>
+      </form>
+      <button id="authToggle" class="auth-toggle">Ainda não tem conta? <strong>Crie agora</strong></button>
+    </dialog>
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  </body>
+</html>

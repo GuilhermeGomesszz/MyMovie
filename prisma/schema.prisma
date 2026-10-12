@@ -1,0 +1,175 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
+}
+
+datasource db {
+  provider = "postgresql"
+  extensions = [pg_trgm]
+}
+
+enum WatchlistStatus {
+  TO_WATCH
+  WATCHING
+  WATCHED
+  DROPPED
+}
+
+enum AvailabilityType {
+  CINEMA
+  STREAMING
+  RENTAL
+  PURCHASE
+}
+
+model WatchlistItem {
+  id String @id @default(uuid())
+
+  userId String
+  movieId String
+
+  status WatchlistStatus @default(TO_WATCH)
+  rating Int?
+  notes String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  movie Movie @relation(fields: [movieId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, movieId])
+}
+
+model User {
+  id    String   @id @default(uuid())
+  name String
+  email String  @unique
+  password String
+
+  createdAt DateTime @default(now())
+
+  movies Movie[] @relation("MovieCreator")
+  watchlistItem WatchlistItem[]
+  communityReviews CommunityReview[]
+  comments MovieComment[]
+  searchEvents SearchEvent[]
+}
+
+
+model Movie {
+  id    String   @id @default(uuid())
+  title String
+  overview String
+  releaseYear Int
+  genres String[] @default([])
+  runtime Int
+  posterUrl String
+  tmdbId Int? @unique
+  createdBy String
+  createdAt DateTime @default(now())
+
+  creator User @relation("MovieCreator", fields: [createdBy], references: [id], onDelete: Cascade)
+
+  watchlistsItems WatchlistItem[]
+  communityReviews CommunityReview[]
+  comments MovieComment[]
+  categories MovieCategory[]
+  availability MovieAvailability[]
+
+  @@index([title(ops: raw("gin_trgm_ops"))], type: Gin)
+  @@index([overview(ops: raw("gin_trgm_ops"))], type: Gin)
+  @@index([genres], type: Gin)
+}
+
+model CommunityReview {
+  id String @id @default(uuid())
+
+  userId String
+  movieId String
+  rating Int
+  review String?
+  recommends Boolean
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  movie Movie @relation(fields: [movieId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, movieId])
+  @@index([movieId, createdAt])
+}
+
+model Category {
+  id String @id @default(uuid())
+  name String @unique
+  externalId String? @unique
+  createdAt DateTime @default(now())
+
+  movies MovieCategory[]
+}
+
+model MovieCategory {
+  movieId String
+  categoryId String
+
+  movie Movie @relation(fields: [movieId], references: [id], onDelete: Cascade)
+  category Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@id([movieId, categoryId])
+  @@index([categoryId, movieId])
+}
+
+model MovieAvailability {
+  id String @id @default(uuid())
+  movieId String
+  provider String
+  type AvailabilityType
+  url String?
+  region String @default("BR")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  movie Movie @relation(fields: [movieId], references: [id], onDelete: Cascade)
+
+  @@unique([movieId, provider, type, region])
+  @@index([movieId])
+}
+
+model MovieComment {
+  id String @id @default(uuid())
+  movieId String
+  userId String
+  parentId String?
+  body String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  movie Movie @relation(fields: [movieId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  parent MovieComment? @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies MovieComment[] @relation("CommentReplies")
+
+  @@index([movieId, parentId, createdAt])
+  @@index([parentId, createdAt])
+}
+
+model SearchEvent {
+  id String @id @default(uuid())
+  userId String?
+  normalizedQuery String
+  genre String
+  createdAt DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId, normalizedQuery, genre])
+  @@index([normalizedQuery, genre])
+  @@index([createdAt])
+}
