@@ -12,6 +12,7 @@ Uma plataforma para descobrir filmes, organizar o que você quer assistir e troc
 - Criar uma conta, manter uma lista pessoal e atualizar o status: quero assistir, assistindo, já assisti ou abandonei.
 - Avaliar filmes, recomendar para outras pessoas, comentar e responder comentários.
 - Receber recomendações personalizadas com base nos gêneros e nas avaliações dos filmes da sua lista.
+- Continuar descobrindo recomendações automaticamente ao rolar a página **Feito para você**, com um botão compacto para carregar mais manualmente.
 - Consultar sugestões de gênero influenciadas por buscas anteriores.
 - Usar uma interface adaptada a telas grandes e celulares.
 
@@ -100,7 +101,7 @@ Quando uma pessoa escolhe **Adicionar à minha lista**, o backend importa aquele
 
 A busca combina resultados do TMDB com os filmes que já foram salvos localmente. PostgreSQL mantém índices trigram para título e sinopse e um índice GIN para gêneros. Os eventos de busca guardam a expressão normalizada e os gêneros dos resultados para destacar tendências em consultas futuras.
 
-As recomendações consultam os gêneros e as avaliações da lista pessoal e pedem ao TMDB filmes relacionados. Elas não dependem de um catálogo local pré-carregado.
+As recomendações consultam os gêneros e as avaliações da lista pessoal e pedem ao TMDB filmes relacionados. A página **Feito para você** busca páginas adicionais do catálogo conforme a pessoa rola; também há um botão para carregar mais manualmente. A consulta tem paginação para respeitar os limites de descoberta do TMDB, sem importar os filmes recomendados para o banco. Eles só são salvos se a pessoa os adicionar à própria lista ou contribuir com uma avaliação/comentário.
 
 ## API principal
 

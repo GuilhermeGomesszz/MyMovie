@@ -75,7 +75,7 @@
         <section id="recommendationsSection" class="content-section recommendations-section" hidden>
           <div class="section-heading">
             <div><p class="section-kicker">DO SEU JEITO</p><h2>Feito para você<span class="brand-period">.</span></h2></div>
-            <button class="text-link" data-view="recommendations">Ver tudo <span aria-hidden="true">→</span></button>
+            <button class="recommendation-pill" data-view="recommendations"><span aria-hidden="true">✳</span> Feito para mim <span aria-hidden="true">↗</span></button>
           </div>
           <p id="recommendationBasis" class="section-note"></p>
           <div id="recommendationsGrid" class="movie-row"></div>
@@ -104,8 +104,16 @@
       </section>
 
       <section id="recommendationsView" class="view page-view">
-        <div class="page-heading"><p class="section-kicker">CURADORIA COM A SUA CARA</p><h1>Para você<span class="brand-period">.</span></h1><p id="recommendationsIntro">Sugestões que combinam com os filmes e gêneros da sua lista.</p></div>
+        <div class="recommendation-page-heading">
+          <div class="page-heading"><p class="section-kicker">CURADORIA COM A SUA CARA</p><h1>Feito para você<span class="brand-period">.</span></h1><p id="recommendationsIntro">Sugestões que combinam com os filmes e gêneros da sua lista.</p></div>
+          <span class="recommendation-pill recommendation-pill-static"><span aria-hidden="true">✳</span> Feito para mim</span>
+        </div>
         <div id="recommendationsPageGrid" class="movie-grid"></div>
+        <div id="recommendationsMore" class="recommendations-more" hidden>
+          <span id="recommendationsLoading" class="recommendations-loading" role="status">Buscando mais filmes para você…</span>
+          <button id="loadMoreRecommendations" class="recommendation-more-button">Carregar mais filmes <span aria-hidden="true">↓</span></button>
+        </div>
+        <div id="recommendationsSentinel" class="recommendations-sentinel" aria-hidden="true"></div>
       </section>
     </main>
 

@@ -9,6 +9,10 @@ const state = {
   categoryId: null,
   categoryMovies: [],
   authMode: "login",
+  recommendationsPage: 0,
+  recommendationsHasMore: true,
+  recommendationsLoading: false,
+  recommendationIds: new Set(),
 };
 
 const $ = (selector, root = document) => root.querySelector(selector);
@@ -59,11 +63,14 @@ function movieCard(movie, { watchlistItem = null } = {}) {
 function renderMovies(target, movies, options = {}) {
   const container = typeof target === "string" ? $(target) : target;
   if (!container) return;
-  if (!movies?.length) {
+  if (!movies?.length && !options.append) {
     container.innerHTML = `<div class="empty-state"><h3>Ainda não há filmes por aqui</h3><p>${escapeHtml(options.emptyMessage || "Tente novamente mais tarde.")}</p></div>`;
     return;
   }
-  container.innerHTML = movies.map((movie) => movieCard(movie, options)).join("");
+  if (options.append && movies?.length) container.querySelector(".empty-state")?.remove();
+  const markup = (movies || []).map((movie) => movieCard(movie, options)).join("");
+  if (options.append) container.insertAdjacentHTML("beforeend", markup);
+  else container.innerHTML = markup;
 }
 
 function toast(message, isError = false) {
@@ -219,21 +226,58 @@ function renderWatchlist() {
   });
 }
 
-async function loadRecommendations() {
+async function loadRecommendations({ reset = true } = {}) {
   if (!state.user) {
+    state.recommendationsHasMore = false;
+    $("#recommendationsMore").hidden = true;
     $("#recommendationsPageGrid").innerHTML = `<div class="empty-state"><h3>Recomendações que evoluem com você</h3><p>Entre para receber sugestões baseadas nos filmes que você adicionou e nos gêneros que mais gosta.</p><button class="button button-primary" data-open-auth>Entrar ou criar conta</button></div>`;
     $("#recommendationsIntro").textContent = "Suas escolhas ajudam a encontrar o próximo filme perfeito.";
     return;
   }
-  showLoading("#recommendationsPageGrid", 12);
+  if (state.recommendationsLoading || (!reset && !state.recommendationsHasMore)) return;
+  if (reset) {
+    state.recommendationsPage = 0;
+    state.recommendationsHasMore = true;
+    state.recommendationIds.clear();
+    showLoading("#recommendationsPageGrid", 12);
+  }
+  state.recommendationsLoading = true;
+  $("#recommendationsMore").hidden = false;
+  $("#recommendationsLoading").hidden = false;
+  $("#loadMoreRecommendations").hidden = true;
   try {
-    const result = await api("/movie/recommendations");
-    renderMovies("#recommendationsPageGrid", result.data, { emptyMessage: "Adicione mais filmes à sua lista para receber novas sugestões." });
+    const page = state.recommendationsPage + 1;
+    const result = await api(`/movie/recommendations?page=${page}`);
+    const unseenMovies = (result.data || []).filter((movie) => {
+      const id = String(movie.tmdbId || movie.id);
+      if (state.recommendationIds.has(id)) return false;
+      state.recommendationIds.add(id);
+      return true;
+    });
+    renderMovies("#recommendationsPageGrid", unseenMovies, {
+      append: !reset && page > 1,
+      emptyMessage: "Adicione mais filmes à sua lista para receber novas sugestões.",
+    });
+    state.recommendationsPage = result.page;
+    state.recommendationsHasMore = result.hasMore;
     $("#recommendationsIntro").textContent = result.basedOn?.length
       ? `Sugestões inspiradas nos gêneros ${result.basedOn.join(", ")} da sua lista.`
       : "Um ponto de partida: os filmes populares de hoje. Adicione alguns títulos para personalizar as próximas sugestões.";
+    $("#recommendationsLoading").hidden = true;
+    $("#loadMoreRecommendations").hidden = !state.recommendationsHasMore;
+    $("#loadMoreRecommendations").textContent = "Carregar mais filmes ↓";
+    $("#recommendationsMore").hidden = !state.recommendationsHasMore;
   } catch (error) {
-    $("#recommendationsPageGrid").innerHTML = `<div class="empty-state"><h3>Não foi possível gerar recomendações</h3><p>${escapeHtml(error.message)}</p></div>`;
+    $("#recommendationsLoading").hidden = true;
+    $("#loadMoreRecommendations").hidden = false;
+    $("#loadMoreRecommendations").textContent = "Tentar novamente ↻";
+    if (reset) {
+      $("#recommendationsPageGrid").innerHTML = `<div class="empty-state"><h3>Não foi possível gerar recomendações</h3><p>${escapeHtml(error.message)}</p></div>`;
+    } else {
+      toast(error.message, true);
+    }
+  } finally {
+    state.recommendationsLoading = false;
   }
 }
 
@@ -369,6 +413,8 @@ async function addToWatchlist(movieId) {
     state.watchlist = await api("/watchlist");
     toast("Adicionado à sua lista.");
     if ($("#watchlistView").classList.contains("is-visible")) renderWatchlist();
+    if ($("#recommendationsView").classList.contains("is-visible")) loadRecommendations();
+    if (state.user) loadRecommendationPreview();
     if (state.currentMovie && (state.currentMovie.tmdbId === movie.tmdbId || state.currentMovie.id === movie.id)) {
       state.currentMovie.localMovieId = movie.id;
       updateMovieAction(movie.id);
@@ -687,6 +733,15 @@ $("#watchlistGrid").addEventListener("change", (event) => {
   const status = event.target.closest("[data-watchlist-status]");
   if (status) updateWatchlistStatus(status.dataset.watchlistStatus, status.value);
 });
+$("#loadMoreRecommendations").addEventListener("click", () => loadRecommendations({ reset: false }));
+const recommendationsObserver = new IntersectionObserver((entries) => {
+  if (entries.some((entry) => entry.isIntersecting)
+      && $("#recommendationsView").classList.contains("is-visible")
+      && !$("#recommendationsMore").hidden) {
+    loadRecommendations({ reset: false });
+  }
+}, { rootMargin: "700px 0px" });
+recommendationsObserver.observe($("#recommendationsSentinel"));
 $("#authForm").addEventListener("submit", submitAuth);
 $("#authToggle").addEventListener("click", () => setAuthMode(state.authMode === "login" ? "register" : "login"));
 $("#accountButton").addEventListener("click", () => state.user ? signOut() : openAuth());

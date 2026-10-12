@@ -295,6 +295,11 @@ const importTmdbMovie = async (req, res) => {
 };
 
 const getRecommendations = async (req, res) => {
+  const page = Number(req.query.page ?? 1);
+  if (!Number.isInteger(page) || page < 1 || page > 500) {
+    return res.status(400).json({ message: "A página precisa ser um número entre 1 e 500" });
+  }
+
   try {
     const watchlist = await prisma.watchlistItem.findMany({
       where: { userId: req.user.id, status: { not: "DROPPED" } },
@@ -315,17 +320,18 @@ const getRecommendations = async (req, res) => {
       .sort((left, right) => right[1] - left[1])
       .slice(0, 3);
     const genreIds = new Map([...genreMap.values()].map(({ id, name }) => [name, id]));
-    const recommendations = topGenres.length
-      ? (await Promise.all(topGenres.map(([genre]) => {
+    const recommendationPages = topGenres.length
+      ? await Promise.all(topGenres.map(([genre]) => {
           const genreId = genreIds.get(genre);
           return genreId
-            ? discoverTmdbMovies("popular", { genreId })
-            : Promise.resolve({ results: [] });
-        }))).flatMap(({ results }) => results ?? [])
-      : (await discoverTmdbMovies("popular")).results ?? [];
+            ? discoverTmdbMovies("popular", { genreId, page })
+            : Promise.resolve({ results: [], total_pages: page });
+        }))
+      : [await discoverTmdbMovies("popular", { page })];
+    const recommendations = recommendationPages.flatMap(({ results }) => results ?? []);
     const uniqueMovies = [...new Map(recommendations.map((movie) => [movie.id, movie])).values()]
       .filter((movie) => !savedTmdbIds.has(movie.id))
-      .slice(0, 18);
+      .slice(0, 30);
     const localMovies = uniqueMovies.length
       ? await prisma.movie.findMany({
           where: { tmdbId: { in: uniqueMovies.map(({ id }) => id) } },
@@ -336,6 +342,11 @@ const getRecommendations = async (req, res) => {
     return res.json({
       data: uniqueMovies.map((movie) => mapTmdbMovie(movie, genreMap, localByTmdbId.get(movie.id))),
       basedOn: topGenres.map(([name]) => name),
+      page,
+      hasMore: page < Math.min(
+        500,
+        Math.max(...recommendationPages.map(({ total_pages: totalPages }) => totalPages ?? page)),
+      ),
     });
   } catch (error) {
     console.error("Erro ao gerar recomendações:", error);
